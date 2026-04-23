@@ -1,0 +1,46 @@
+{
+  "$comment": "Example configuration showing per-cluster overrides, a customer-supplied dedup ratio, and additional bucket rules. Copy this file, customize, then pass via -ConfigPath.",
+
+  "vsan": {
+    "defaultPolicy": {
+      "ftt": 1,
+      "raid": 5,
+      "dedupCompressionRatio": 1.5,
+      "dedupCompressionRatioSource": "DEFAULT_ASSUMED_AVERAGE"
+    },
+    "overrides": [
+      {
+        "$comment": "Example: a cluster with dedup+compression enabled where the customer reported a measured 1.78x ratio (from vCenter > Cluster > Monitor > vSAN > Capacity).",
+        "matchDatastoreName": "vsanDatastore-clusterA",
+        "ftt": 1,
+        "raid": 5,
+        "dedupCompressionRatio": 1.78,
+        "dedupCompressionRatioSource": "CUSTOMER_REPORTED"
+      },
+      {
+        "$comment": "Example: a cluster using RAID-1 mirrors for critical workloads with dedup disabled.",
+        "matchDatastoreName": "vsanDatastore-clusterB",
+        "ftt": 1,
+        "raid": 1,
+        "dedupCompressionRatio": 1.0,
+        "dedupCompressionRatioSource": "CUSTOMER_REPORTED_DISABLED"
+      }
+    ]
+  },
+
+  "buckets": [
+    { "name": "Local VMFS (excluded)", "matchName": "^(datastore[0-9]*|z_local|local-ds-|local_)", "matchNameCaseInsensitive": true, "exclude": true, "excludeReason": "ESXi boot/scratch" },
+    { "name": "vSAN", "matchType": "vsan" },
+    { "name": "Nimble", "matchName": "nimble", "matchNameCaseInsensitive": true },
+    { "name": "Pure FlashArray (existing)", "matchName": "^pure-", "matchNameCaseInsensitive": true },
+    { "name": "NetApp NFS", "matchType": "NFS" },
+    { "name": "Other SAN (VMFS)", "matchType": "VMFS" },
+    { "name": "Other", "matchAll": true }
+  ],
+
+  "output": {
+    "includeVmDetail": true,
+    "includeCharts": false,
+    "roundDigits": 2
+  }
+}

@@ -1,0 +1,23 @@
+# Output artifacts
+*.xlsx
+!samples/**/*.xlsx
+
+# OS
+.DS_Store
+Thumbs.db
+*.Identifier
+*:Zone.Identifier
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Customer data — never commit raw RVTools exports
+**/raw-rvtools/
+**/customer-data/
+RVTools_tab*.csv
+RVTools_tab*.xlsx
+# ...except the synthetic demo dataset, which is fabricated and safe to ship
+!samples/synthetic/RVTools_tab*.csv
+!samples/synthetic/RVTools_tab*.xlsx

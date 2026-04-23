@@ -1,0 +1,52 @@
+{
+  "$comment": "vSANBR default configuration. Override any section via -ConfigPath. Values edited in the output xlsx Assumptions sheet are for what-if analysis and do not persist back here.",
+
+  "vsan": {
+    "$comment": "Default policy applied to ALL vSAN datastores unless an entry in 'overrides' matches. dedupCompressionRatio of 1.5 is a conservative industry average and is FLAGGED in the output whenever it is used without customer-supplied data.",
+    "defaultPolicy": {
+      "ftt": 1,
+      "raid": 5,
+      "dedupCompressionRatio": 1.5,
+      "dedupCompressionRatioSource": "DEFAULT_ASSUMED_AVERAGE"
+    },
+    "overrides": []
+  },
+
+  "buckets": [
+    {
+      "$comment": "Order matters. First match wins. 'exclude: true' removes the bucket from the logical TiB total (with an audit note).",
+      "name": "Local VMFS (excluded)",
+      "matchName": "^(datastore[0-9]*|z_local|local-ds-|local_)",
+      "matchNameCaseInsensitive": true,
+      "exclude": true,
+      "excludeReason": "ESXi boot/scratch datastores not in migration scope"
+    },
+    {
+      "name": "vSAN",
+      "matchType": "vsan"
+    },
+    {
+      "name": "Nimble",
+      "matchName": "nimble",
+      "matchNameCaseInsensitive": true
+    },
+    {
+      "name": "Other SAN (VMFS)",
+      "matchType": "VMFS"
+    },
+    {
+      "name": "NFS",
+      "matchType": "NFS"
+    },
+    {
+      "name": "Other",
+      "matchAll": true
+    }
+  ],
+
+  "output": {
+    "includeVmDetail": false,
+    "includeCharts": false,
+    "roundDigits": 2
+  }
+}

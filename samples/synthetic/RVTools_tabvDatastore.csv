@@ -1,0 +1,7 @@
+"Name","Type","Cluster name","# Hosts","Capacity MiB","Provisioned MiB","In Use MiB","Free MiB"
+"vsan-demo-01","vsan","cluster-demo-01","4","10485760","8388608","6291456","4194304"
+"vsan-demo-02","vsan","cluster-demo-02","4","10485760","5242880","4194304","6291456"
+"nimble-demo-01","VMFS","cluster-demo-01","2","5242880","4194304","3145728","2097152"
+"nimble-demo-02","VMFS","cluster-demo-02","2","5242880","1572864","1048576","4194304"
+"san-fc-demo-01","VMFS","cluster-demo-01","2","2097152","1048576","819200","1277952"
+"local-ds-esx01","VMFS","cluster-demo-01","1","512000","51200","51200","460800"
