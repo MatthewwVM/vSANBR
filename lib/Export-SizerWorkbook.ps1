@@ -26,11 +26,16 @@ function Export-SizerWorkbook {
         [Parameter()] [string] $SourceLabel = ''
     )
 
+    if (Test-Path -LiteralPath $OutputPath -PathType Container) {
+        throw "OutputPath is a directory, not a file: $OutputPath. Supply a path ending in .xlsx (e.g. C:\tmp\sizing.xlsx)."
+    }
     $dir = [System.IO.Path]::GetDirectoryName([System.IO.Path]::GetFullPath($OutputPath))
     if ($dir -and -not (Test-Path -LiteralPath $dir)) {
         New-Item -ItemType Directory -Path $dir -Force | Out-Null
     }
-    if (Test-Path -LiteralPath $OutputPath) { Remove-Item -LiteralPath $OutputPath -Force }
+    if (Test-Path -LiteralPath $OutputPath -PathType Leaf) {
+        Remove-Item -LiteralPath $OutputPath -Force
+    }
 
     $s = $Analysis.Summary
     $summaryRows = @(

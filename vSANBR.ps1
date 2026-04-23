@@ -73,6 +73,16 @@ if (-not (Test-Path -LiteralPath $InputPath)) {
     throw "InputPath not found: $InputPath"
 }
 
+$endsWithSep = $OutputPath.EndsWith('\') -or $OutputPath.EndsWith('/')
+$isExistingDir = (Test-Path -LiteralPath $OutputPath -PathType Container)
+if ($endsWithSep -or $isExistingDir) {
+    $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+    $OutputPath = Join-Path -Path $OutputPath.TrimEnd('\','/') -ChildPath "vSANBR-$stamp.xlsx"
+}
+elseif (-not [System.IO.Path]::HasExtension($OutputPath)) {
+    $OutputPath = "$OutputPath.xlsx"
+}
+
 if (-not $ConfigPath) {
     $ConfigPath = Join-Path $scriptRoot 'config/default.json'
 }
