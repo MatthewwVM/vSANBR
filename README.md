@@ -110,6 +110,62 @@ name, which is what you need when a customer mixes policies.
 ./vSANBR.ps1 -InputPath ./samples/synthetic -OutputPath /tmp/demo.xlsx
 ```
 
+## Finding vSAN inputs in vCenter
+
+RVTools does not export the vSAN dedup/compression ratio or the storage policy
+assignments, so these have to be read out of vCenter by hand. The two inputs
+that matter most for sizing accuracy are (1) the actual dedup+compression ratio
+per cluster, and (2) which policy the bulk of the data is sitting on.
+
+### Dedup and compression ratio (per cluster)
+
+vSAN reports dedup/compression as a single combined ratio. Grab it per cluster
+and feed it back in via `-DedupCompressionRatio` or a config override.
+
+1. vSphere Client &rarr; **Hosts and Clusters** &rarr; select the vSAN cluster.
+2. **Monitor** tab &rarr; **vSAN** &rarr; **Capacity**.
+3. Look at the **Data reduction** (or **Deduplication and compression overview**)
+   panel. The number shown is `X.XXx` (for example `1.78x`). That is the value
+   to pass to vSANBR.
+4. If the cluster has the feature disabled, the panel will say so and the
+   ratio is effectively `1.0`.
+
+Notes:
+- vSAN ESA ("Express Storage Architecture") always reports compression-only;
+  OSA clusters with dedup+compression enabled report the combined number.
+- The ratio is not constant. If the customer has a long-running environment,
+  it is more meaningful than a freshly-ingested one. If multiple clusters
+  differ meaningfully, use a config file with per-cluster overrides rather
+  than one flat `-DedupCompressionRatio`.
+
+### Identifying which policies hold the most data
+
+Not every VM is on the default policy. Before you assume `FTT=1 RAID=5`, find
+out where the data actually lives.
+
+1. vSphere Client &rarr; **Policies and Profiles** &rarr; **VM Storage Policies**.
+2. Sort/scan the list for vSAN policies (they will have vSAN-specific rules:
+   Failures to tolerate, Number of disk stripes, etc.).
+3. Click a policy &rarr; **VMs** tab &rarr; shows every VM currently assigned to
+   that policy. Count rows, or sort by `Provisioned` / `Used` to see which
+   policy is carrying the most capacity.
+4. Click the **Check compliance** / **Rules** tab to read the FTT and RAID
+   values the policy enforces (e.g. `Failures to tolerate: 1 failure - RAID-5
+   (Erasure Coding)`).
+
+A faster alternative when a cluster has many policies:
+
+1. **Hosts and Clusters** &rarr; select the vSAN cluster.
+2. **Monitor** &rarr; **vSAN** &rarr; **Virtual Objects**.
+3. Group by **Storage Policy**. The policies with the largest object counts
+   and used capacity are the ones that matter; smaller policies can be
+   covered by the default reversal without introducing meaningful error.
+
+Feed the dominant policies into `samples/sample-config.json` as overrides
+keyed on datastore name (or cluster name if the datastore names are opaque).
+The `Assumptions` sheet in the output workbook will show exactly which policy
+was applied to which datastore, so you can confirm the overrides matched.
+
 ## Output workbook
 
 | Sheet          | Contents                                                                      |
