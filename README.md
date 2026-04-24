@@ -8,19 +8,25 @@ and the assumptions used so every number is auditable.
 
 ## Why
 
-vSAN reports "In Use" capacity as **post-dedup/compression bytes consumed on
-the cache tier, including replica/parity overhead**. That value is not the
-amount of data a replacement array has to store  it is the physical footprint
-of that data on a vSAN with a specific storage policy. This generally leads to
-customers and partners overestimating storage capacity for new storage arrays.
+vSAN reports per-VM "In Use" capacity inclusive of **replica/parity
+overhead** from the storage policy. That value is not the amount of data a
+replacement array has to store - it is the physical footprint of the data on
+a vSAN with a specific FTT/RAID policy. Taking the number straight out of
+vCenter / RVTools oversizes the target array by the FTT multiplier.
 
-If you take the number straight out of vCenter / RVTools, you will either
-oversize or undersize depending on the replacement array's data-reduction
-characteristics. vSANBR applies the right inverse:
+vSANBR reverses that overhead:
 
 ```
-Logical = (InUse / FttMultiplier) * DedupCompressionRatio
+Logical = InUse / FttMultiplier
 ```
+
+> **Note on dedup/compression.** Previous logic assumed vInfo 'In Use MiB'
+> was post-dedup/compression and multiplied the result by an assumed dedup
+> ratio. That assumption is under verification: dedup is a cluster-scope
+> property that cannot be cleanly attributed per-VM, so the per-VM committed
+> field is believed NOT to include dedup savings. Until a `VsanQuerySpaceUsage`
+> ground-truth run confirms or refutes this, the dedup factor is surfaced in
+> the workbook and CLI but **not applied to the logical total**.
 
 | FTT | RAID         | Multiplier |
 | --- | ------------ | ---------- |
@@ -75,8 +81,9 @@ Install-Module ImportExcel -Scope CurrentUser
 ./vSANBR.ps1 -InputPath C:\RVTools\customer -OutputPath C:\tmp\sizing.xlsx
 ```
 
-Defaults to FTT=1, RAID-5, 1.5x dedup/compression. The default ratio is
-**flagged** in the workbook so you aren't surprised.
+Defaults to FTT=1, RAID-5. The `-DedupCompressionRatio` default of 1.5x is
+configured but **not applied** to the headline (see note on dedup above);
+the ratio is surfaced in the workbook as advisory metadata only.
 
 ### Customer has told you the real ratio
 
@@ -85,7 +92,9 @@ Defaults to FTT=1, RAID-5, 1.5x dedup/compression. The default ratio is
 ```
 
 The workbook will show `CUSTOMER_REPORTED` instead of `DEFAULT_ASSUMED_AVERAGE`
-in the Assumptions sheet.
+in the Assumptions sheet. The ratio is recorded but does not modify the
+logical total while the dedup behaviour of `summary.storage.committed` is
+under verification.
 
 ### Mirrored vSAN (FTT=1 RAID-1)
 
@@ -183,7 +192,8 @@ was applied to which datastore, so you can confirm the overrides matched.
 
 | Flag                  | When it fires                                                                        |
 | --------------------- | ------------------------------------------------------------------------------------ |
-| `DEFAULT_DEDUP_RATIO` | At least one vSAN datastore used the built-in 1.5x assumption. Replace with the customer-reported ratio for accuracy. |
+| `DEDUP_NOT_APPLIED`   | Always fires. Reminder that the headline removes FTT/RAID only; dedup/compression is surfaced but not applied to the total. |
+| `DEFAULT_DEDUP_RATIO` | The built-in 1.5x ratio is configured. Advisory only while dedup handling is under verification. |
 | `POWERED_OFF_VMS`     | The environment has powered-off VMs. Their `In Use MiB` excludes swap (`.vswp`); confirm they are in migration scope. |
 | `ORPHAN_VMS`          | VMs whose `Path` references a datastore not present in `vDatastore`. Counted at reported In Use with no vSAN reversal. |
 | `STRADDLING_VMS`      | VMs with disks on two or more datastores. Advisory only; does not affect the headline for full-evacuation sizing. |

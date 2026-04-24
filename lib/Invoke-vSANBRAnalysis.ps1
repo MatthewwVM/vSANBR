@@ -246,8 +246,9 @@ function Invoke-vSANBRAnalysis {
     }
 
     # -- Flags
+    $flags.Add("DEDUP_NOT_APPLIED: vInfo 'In Use MiB' is believed to include FTT/RAID overhead but NOT dedup/compression at the per-VM level. The headline removes FTT only. If VsanQuerySpaceUsage on the source cluster shows a meaningful dedup ratio AND confirms per-VM committed is post-dedup, multiply the headline by that ratio manually.") | Out-Null
     if ($defaultRatioUsed) {
-        $flags.Add("DEFAULT_DEDUP_RATIO: one or more vSAN datastores used the default 1.5x dedup/compression assumption. Supply a customer-reported ratio via -ConfigPath for accuracy.") | Out-Null
+        $flags.Add("DEFAULT_DEDUP_RATIO: default 1.5x dedup/compression ratio is configured but not applied to the logical total (advisory only while dedup handling is under verification).") | Out-Null
     }
     if ($poweredOff -gt 0) {
         $flags.Add("POWERED_OFF_VMS: $poweredOff VMs are powered off - their 'In Use MiB' excludes swap (.vswp) space. Review whether migrating them is in scope.") | Out-Null

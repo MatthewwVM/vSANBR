@@ -2,15 +2,22 @@
 
 <#
 .SYNOPSIS
-    Converts vSAN 'In Use' capacity to logical data by removing FTT/RAID overhead
-    and re-applying the dedup/compression ratio reported by the source.
+    Converts vSAN 'In Use' capacity to logical data by removing FTT/RAID overhead.
 
 .DESCRIPTION
-    vSAN reports 'In Use' as the physical bytes consumed on the cache tier,
-    which INCLUDES replica/parity overhead AND reflects the post-dedup/compression
-    footprint. To recover the logical data the customer is actually storing:
+    Previous logic assumed vInfo 'In Use MiB' was post-dedup/compression and
+    multiplied the result by an assumed dedup ratio to recover logical data.
+    That assumption is not yet verified: VMware's per-VM committed field
+    (vInfo 'In Use MiB' = summary.storage.committed) empirically includes
+    FTT/RAID replica overhead, but dedup/compression is a cluster-scope
+    property that cannot be cleanly attributed per-VM and is believed NOT
+    to be baked into the per-VM number. Until customer ground-truth
+    (VsanQuerySpaceUsage) confirms or refutes that, the math is:
 
-        Logical = InUse / FttMultiplier * DedupCompressionRatio
+        Logical = InUse / FttMultiplier
+
+    DedupCompressionRatio is still accepted for signature/CLI compatibility
+    and surfaced in the output, but is NOT applied to the logical total.
 
     FttMultiplier lookup (VMware, Demystifying Capacity Reporting in vSAN):
         FTT=0                       1.00
@@ -76,7 +83,7 @@ function ConvertTo-VsanLogicalMiB {
 
     $mult = Get-VsanFttMultiplier -Ftt $Ftt -Raid $Raid
     if ($DedupCompressionRatio -le 0) { throw "DedupCompressionRatio must be > 0" }
-    $logical = [double]$InUseMiB / $mult * $DedupCompressionRatio
+    $logical = [double]$InUseMiB / $mult
     return [long][math]::Round($logical, 0)
 }
 

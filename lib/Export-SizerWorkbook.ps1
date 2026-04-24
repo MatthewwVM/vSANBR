@@ -67,7 +67,7 @@ function Export-SizerWorkbook {
 
     $cc = $Analysis.Crosscheck
     $ccRows = @(
-        [pscustomobject]@{ Metric = 'Headline TiB (vInfo, vSAN-reversed)';  Value = $cc.HeadlineTiB;      Note = 'Migration target. Sum of per-VM In Use MiB with vSAN FTT/RAID overhead removed.' }
+        [pscustomobject]@{ Metric = 'Headline TiB (vInfo, vSAN-reversed)';  Value = $cc.HeadlineTiB;      Note = 'Migration target. Sum of per-VM In Use MiB with vSAN FTT/RAID overhead removed. Dedup/compression NOT applied pending verification of per-VM dedup semantics.' }
         [pscustomobject]@{ Metric = 'Guest-OS consumed TiB (vPartition)';    Value = $cc.GuestConsumedTiB; Note = 'Sum of partition "Consumed MiB" across all guests. Independent view.' }
         [pscustomobject]@{ Metric = 'Guest-OS capacity TiB (vPartition)';    Value = $cc.GuestCapacityTiB; Note = 'Sum of partition sizes as seen inside guests.' }
         [pscustomobject]@{ Metric = 'Delta TiB (headline - guest)';           Value = $cc.DeltaTiB;         Note = 'Positive = headline exceeds guest view. Typical sources: thin-provisioning reclaim lag, orphan VMDKs, swap, VM metadata.' }

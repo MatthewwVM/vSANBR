@@ -2,7 +2,7 @@
   "$comment": "vSANBR default configuration. Override any section via -ConfigPath. Values edited in the output xlsx Assumptions sheet are for what-if analysis and do not persist back here.",
 
   "vsan": {
-    "$comment": "Default policy applied to ALL vSAN datastores unless an entry in 'overrides' matches. dedupCompressionRatio of 1.5 is a conservative industry average and is FLAGGED in the output whenever it is used without customer-supplied data.",
+    "$comment": "Default policy applied to ALL vSAN datastores unless an entry in 'overrides' matches. dedupCompressionRatio is currently advisory only: previous logic multiplied the logical total by this ratio, but vInfo per-VM committed is believed to already exclude dedup savings. The ratio is surfaced in the workbook but not applied to the headline pending VsanQuerySpaceUsage ground-truth verification.",
     "defaultPolicy": {
       "ftt": 1,
       "raid": 5,
